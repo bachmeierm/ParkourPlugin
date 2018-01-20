@@ -2,5 +2,12 @@
 	"FileVersion": 3,
 	"EngineAssociation": "{6B387299-4176-EFE0-2402-F890A927BD8E}",
 	"Category": "",
-	"Description": ""
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "ParkourProject",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
 }
