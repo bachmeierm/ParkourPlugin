@@ -16,7 +16,21 @@ public:
 
 	UParkourMovementComponent(const FObjectInitializer& ObjectInitializer);
 
+	// Begin UActorComponent interface
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	// End UActorComponent interface
+
+	// Being UMovementComponent interface
+	virtual float GetMaxSpeed() const override;
+	// End UMovementComponent interface
+
+	/**
+	 * Controls how fast the player decelerates while sliding.
+	 * Lower values let the player slide longer (0 allows the player to slide indefinitely long, until he stops crouching),
+	 * where as higher values shorten the sliding period.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "0", ClampMax = "1"))
+	float SlidingFriction = 0.8f;
 
 	/**
 	 * Trigger upward movements like jumping and climbing.
@@ -34,6 +48,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Parkour")
 	void SetParkourActionDown(bool IsActive);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Parkour")
+	bool IsSliding();
+
 protected:
 
 	/**
@@ -44,8 +61,15 @@ protected:
 	virtual void UpdateParkourMovement(float DeltaTime);
 
 	virtual void UpdateCrouching(float DeltaTime);
+	virtual void UpdateSliding(float DeltaTime);
 
 private:
+
+	/** Whether the player is currently sliding */
+	bool bIsSliding;
+
+	/** How fast the player is currently sliding */
+	float SlidingMovementSpeed;
 
 	bool bIsParkourActionUpActive;
 	bool bIsParkourActionDownActive;
