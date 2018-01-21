@@ -62,6 +62,7 @@ protected:
 
 	virtual void UpdateCrouching(float DeltaTime);
 	virtual void UpdateSliding(float DeltaTime);
+	virtual void UpdateJumping(float DeltaTime);
 
 private:
 

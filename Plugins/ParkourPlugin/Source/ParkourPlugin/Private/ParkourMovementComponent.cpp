@@ -41,6 +41,7 @@ void UParkourMovementComponent::UpdateParkourMovement(float DeltaTime)
 {
 	UpdateCrouching(DeltaTime);
 	UpdateSliding(DeltaTime);
+	UpdateJumping(DeltaTime);
 }
 
 void UParkourMovementComponent::UpdateCrouching(float DeltaTime)
@@ -63,4 +64,12 @@ void UParkourMovementComponent::UpdateSliding(float DeltaTime)
 	SlidingMovementSpeed -= SlidingMovementSpeed * SlidingFriction * DeltaTime;
 	SlidingMovementSpeed = FMath::Clamp(SlidingMovementSpeed, MaxWalkSpeedCrouched, MAX_flt);
 	bIsSliding = true;
+}
+
+void UParkourMovementComponent::UpdateJumping(float DeltaTime)
+{
+	if (MovementMode == MOVE_Walking && bIsParkourActionUpActive && !IsCrouching())
+	{
+		DoJump(false);
+	}
 }
