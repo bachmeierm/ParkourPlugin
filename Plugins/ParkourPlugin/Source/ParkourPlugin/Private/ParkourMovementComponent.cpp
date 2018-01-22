@@ -37,11 +37,17 @@ bool UParkourMovementComponent::IsSliding()
 	return bIsSliding;
 }
 
+bool UParkourMovementComponent::IsCoilJumping()
+{
+	return bIsCoilJumping;
+}
+
 void UParkourMovementComponent::UpdateParkourMovement(float DeltaTime)
 {
 	UpdateCrouching(DeltaTime);
 	UpdateSliding(DeltaTime);
 	UpdateJumping(DeltaTime);
+	UpdateCoilJumping(DeltaTime);
 }
 
 void UParkourMovementComponent::UpdateCrouching(float DeltaTime)
@@ -72,4 +78,55 @@ void UParkourMovementComponent::UpdateJumping(float DeltaTime)
 	{
 		DoJump(false);
 	}
+}
+
+void UParkourMovementComponent::UpdateCoilJumping(float DeltaTime)
+{
+	bool CancelCoilJump = false;
+	float AngleOffset = 0;
+
+	if (MovementMode != MOVE_Falling || !bIsParkourActionDownActive)
+	{
+		CancelCoilJump = true;
+	}
+
+	if (!CancelCoilJump)
+	{
+		FVector VelocityDirection = Velocity;
+		VelocityDirection.Normalize();
+		float DotProduct = FVector::DotProduct(VelocityDirection, FVector::UpVector);
+		float AngleRadians = FMath::Acos(DotProduct);
+		float AngleDegree = FMath::RadiansToDegrees(AngleRadians);
+		AngleOffset = 90.0f - AngleDegree;
+	}
+
+	if (CancelCoilJump || AngleOffset < CoilJumpAngleMin || AngleOffset > CoilJumpAngleMax)
+	{
+		if (bIsCoilJumping)
+		{
+			ResetCapsuleHalfHeight();
+			bIsCoilJumping = false;
+		}
+
+		return;
+	}
+
+	bIsCoilJumping = true;
+	SetCapsuleHalfHeight(CoilJumpCapsuleHalfHeight);
+}
+
+void UParkourMovementComponent::SetCapsuleHalfHeight(float HalfHeight)
+{
+	ACharacter* Character = GetCharacterOwner();
+	UCapsuleComponent* CapsuleComponent = Character->GetCapsuleComponent();
+	CapsuleComponent->SetCapsuleHalfHeight(HalfHeight);
+}
+
+void UParkourMovementComponent::ResetCapsuleHalfHeight()
+{
+	UClass* CharacterClass = CharacterOwner->GetClass();
+	ACharacter* DefaultCharacter = CharacterClass->GetDefaultObject<ACharacter>();
+	UCapsuleComponent* DefaultCapsuleComponent = DefaultCharacter->GetCapsuleComponent();
+	float DefaultCapsuleHalfHeight = DefaultCapsuleComponent->GetUnscaledCapsuleHalfHeight();
+	SetCapsuleHalfHeight(DefaultCapsuleHalfHeight);
 }

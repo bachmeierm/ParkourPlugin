@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "ParkourMovementComponent.generated.h"
 
 /**
@@ -29,8 +30,28 @@ public:
 	 * Lower values let the player slide longer (0 allows the player to slide indefinitely long, until he stops crouching),
 	 * where as higher values shorten the sliding period.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "0", ClampMax = "1"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour | Sliding", meta = (ClampMin = "0", ClampMax = "1"))
 	float SlidingFriction = 0.8f;
+
+	/**
+	 * Minimum movement angle for which the player can coil jump.
+	 * If the angle drops below this value the coil jump is terminated.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour | CoilJump", meta = (ClampMin = "-80", ClampMax = "0" ))
+	float CoilJumpAngleMin = -20;
+
+	/**
+	 * Maximum movement angle for which the player can coil jump.
+	 * If the angle rises above this value the coil jump is terminated.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour | CoilJump", meta = (ClampMin = "0", ClampMax = "80"))
+	float CoilJumpAngleMax = 45;
+
+	/**
+	 * Collision half height of the character capsule while coil jumping.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour | CoilJump")
+	float CoilJumpCapsuleHalfHeight = 44;
 
 	/**
 	 * Trigger upward movements like jumping and climbing.
@@ -51,27 +72,35 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Parkour")
 	bool IsSliding();
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Parkour")
+	bool IsCoilJumping();
+
 protected:
 
-	/**
-	 * Update all parkour moves.
-	 *
-	 * @param DeltaTime Time slice for the movement.
-	 */
+	bool bIsSliding;
+	float SlidingMovementSpeed;
+
+	bool bIsCoilJumping;
+
+	bool bIsParkourActionUpActive;
+	bool bIsParkourActionDownActive;
+
 	virtual void UpdateParkourMovement(float DeltaTime);
 
 	virtual void UpdateCrouching(float DeltaTime);
 	virtual void UpdateSliding(float DeltaTime);
 	virtual void UpdateJumping(float DeltaTime);
+	virtual void UpdateCoilJumping(float DeltaTime);
 
-private:
+	/**
+	 * Set the height of the owning character capsule.
+	 *
+	 * @param HalfHeight Half height from capsule center to end of top or bottom hemisphere. 
+	 */
+	void SetCapsuleHalfHeight(float HalfHeight);
 
-	/** Whether the player is currently sliding */
-	bool bIsSliding;
-
-	/** How fast the player is currently sliding */
-	float SlidingMovementSpeed;
-
-	bool bIsParkourActionUpActive;
-	bool bIsParkourActionDownActive;
+	/**
+	 * Reset the height of the owning character capsule to the default value.
+	 */
+	void ResetCapsuleHalfHeight();
 };
