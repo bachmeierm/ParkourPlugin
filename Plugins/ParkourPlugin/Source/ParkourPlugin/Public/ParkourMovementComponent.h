@@ -1,9 +1,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ParkourZipLine.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "ParkourMovementComponent.generated.h"
+
+UENUM(BlueprintType)
+enum class EParkourMovementMode : uint8
+{
+	ZipLine = 0,
+};
 
 /**
  * 
@@ -54,6 +61,41 @@ public:
 	float CoilJumpCapsuleHalfHeight = 44;
 
 	/**
+	 * The center of the zip line trigger sphere relative to the character location.
+	 * When the sphere overlaps the zip line, the character is automatically attached to it.
+	 * In most cases this should be slightly above the character, where his hands
+	 * would be if he put them up.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour")
+	FVector ZipLineTriggerOffset = FVector(0, 0, 100);
+
+	/**
+	 * The radius of the zip line trigger sphere. Very small values make it hard to jump onto the zip line,
+	 * whereas large values could accidentally trigger zip line attachments.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "10", ClampMax = "500"))
+	float ZipLineTriggerRadius = 100;
+
+	/** Speed the character gains per second, while sliding down a zip line  */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "0"))
+	float ZipLineAcceleration = 400;
+
+	/** The maximum speed possible while sliding down a zip line. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "0"))
+	float ZipLineMaxSpeed = 15000;
+
+	/** The speed at which the character rotation is interpolated to the sliding angle. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "0"))
+	float ZipLineInterpolationSpeed = 100;
+	
+	/**
+	 * Time in seconds, the character is not able to attach to a zip line after dropping
+	 * from a previous zip line move.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "0"))
+	float ZipLineTimeout = 1;
+
+	/**
 	 * Trigger upward movements like jumping and climbing.
 	 *
 	 * @param IsActive Whether the upwards action should be active.
@@ -82,6 +124,11 @@ protected:
 
 	bool bIsCoilJumping;
 
+	AParkourZipLine* ZipLine = nullptr;
+	float ZipLineOffset;
+	float ZipLineSpeed;
+	float ZipLineDropTime;
+
 	bool bIsParkourActionUpActive;
 	bool bIsParkourActionDownActive;
 
@@ -91,6 +138,7 @@ protected:
 	virtual void UpdateSliding(float DeltaTime);
 	virtual void UpdateJumping(float DeltaTime);
 	virtual void UpdateCoilJumping(float DeltaTime);
+	virtual void UpdateZipLine(float DeltaTime);
 
 	/**
 	 * Set the height of the owning character capsule.

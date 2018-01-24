@@ -48,6 +48,7 @@ void UParkourMovementComponent::UpdateParkourMovement(float DeltaTime)
 	UpdateSliding(DeltaTime);
 	UpdateJumping(DeltaTime);
 	UpdateCoilJumping(DeltaTime);
+	UpdateZipLine(DeltaTime);
 }
 
 void UParkourMovementComponent::UpdateCrouching(float DeltaTime)
@@ -113,6 +114,73 @@ void UParkourMovementComponent::UpdateCoilJumping(float DeltaTime)
 
 	bIsCoilJumping = true;
 	SetCapsuleHalfHeight(CoilJumpCapsuleHalfHeight);
+}
+
+void UParkourMovementComponent::UpdateZipLine(float DeltaTime)
+{
+	UWorld* World = GetWorld();
+	ACharacter* Character = GetCharacterOwner();
+
+	if (MovementMode == MOVE_Custom && CustomMovementMode == (uint8)EParkourMovementMode::ZipLine)
+	{
+		float ZipLineLength = ZipLine->SplineComponent->GetSplineLength();
+
+		float UpdatedSpeed = ZipLineSpeed + ZipLineAcceleration * DeltaTime;
+		ZipLineSpeed = FMath::Clamp(UpdatedSpeed, 0.0f, ZipLineMaxSpeed);
+		ZipLineOffset += 1 / ZipLineLength * ZipLineSpeed * DeltaTime;
+
+		float RemainingDistance = ZipLineLength - ZipLineOffset * ZipLineLength;
+
+		FVector Tangent = ZipLine->SplineComponent->GetTangentAtTime(ZipLineOffset, ESplineCoordinateSpace::World);
+		Tangent.Normalize();
+
+		if (RemainingDistance <= ZipLine->ZipLineAutoDropOffset || bIsParkourActionDownActive)
+		{
+			Velocity = Tangent * ZipLineSpeed;
+			ZipLineDropTime = World->TimeSeconds;
+			Character->bUseControllerRotationYaw = true;
+			SetMovementMode(MOVE_Falling);
+			return;
+		}
+
+		FVector TargetLocation = ZipLine->SplineComponent->GetLocationAtTime(ZipLineOffset, ESplineCoordinateSpace::World) - ZipLineTriggerOffset;
+		FRotator TargetRotation = Tangent.Rotation();
+		TargetRotation.Pitch = 0;
+		TargetRotation.Roll = 0;
+
+		FVector UpdatedLocation = FMath::VInterpConstantTo(Character->GetActorLocation(), TargetLocation, DeltaTime, ZipLineSpeed);
+		FRotator UpdatedRotation = FMath::RInterpConstantTo(Character->GetActorRotation(), TargetRotation, DeltaTime, ZipLineInterpolationSpeed);
+
+		Character->SetActorLocation(UpdatedLocation);
+		Character->SetActorRotation(UpdatedRotation);
+	}
+	else if (MovementMode == MOVE_Falling && World->TimeSeconds - ZipLineDropTime > ZipLineTimeout)
+	{
+		FVector TriggerLocation = Character->GetActorLocation() + ZipLineTriggerOffset;
+
+		FCollisionObjectQueryParams ObjectParams;
+		FCollisionQueryParams Params;
+		Params.bTraceComplex = true;
+
+		TArray<FOverlapResult> Overlaps;
+		if (World->OverlapMultiByObjectType(Overlaps, TriggerLocation, FQuat::Identity, ObjectParams, FCollisionShape::MakeSphere(ZipLineTriggerRadius), Params))
+		{
+			for (FOverlapResult Overlap : Overlaps)
+			{
+				AActor* Actor = Overlap.GetActor();
+				if (Actor && Actor->GetClass()->IsChildOf(AParkourZipLine::StaticClass()))
+				{
+					ZipLine = Cast<AParkourZipLine>(Overlap.GetActor());
+					ZipLineOffset = ZipLine->SplineComponent->FindInputKeyClosestToWorldLocation(TriggerLocation);
+					ZipLineSpeed = FMath::Clamp(Velocity.Size(), 0.0f, ZipLineMaxSpeed);;
+
+					Character->bUseControllerRotationYaw = false;
+
+					SetMovementMode(MOVE_Custom, (uint8)EParkourMovementMode::ZipLine);
+				}
+			}
+		}
+	}
 }
 
 void UParkourMovementComponent::SetCapsuleHalfHeight(float HalfHeight)
