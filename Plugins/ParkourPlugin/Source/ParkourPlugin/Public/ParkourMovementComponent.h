@@ -76,7 +76,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "10", ClampMax = "500"))
 	float ZipLineTriggerRadius = 100;
 
-	/** Speed the character gains per second, while sliding down a zip line  */
+	/** Speed the character gains per second, while sliding down a zip line. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "0"))
 	float ZipLineAcceleration = 400;
 
@@ -87,7 +87,23 @@ public:
 	/** The speed at which the character rotation is interpolated to the sliding angle. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "0"))
 	float ZipLineInterpolationSpeed = 100;
-	
+
+	/** Minimum required height difference between jump start location and boost platform to trigger a spring board movement. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "0"))
+	float SpringBoardHeightDeltaMin = 50;
+
+	/** Maximum required height difference between jump start location and boost platform to trigger a spring board movement. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "0"))
+	float SpringBoardHeightDeltaMax = 150;
+
+	/** The angle (forward being 0 and upward being 90) at which the character is boosted when spring boarding. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "0", ClampMax = "90" ))
+	float SpringBoardBoostAngle = 45;
+
+	/** How strong the character is boosted when spring boarding. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parkour", meta = (ClampMin = "0"))
+	float SpringBoardBoostStrength = 1000;
+
 	/**
 	 * Time in seconds, the character is not able to attach to a zip line after dropping
 	 * from a previous zip line move.
@@ -119,6 +135,10 @@ public:
 
 protected:
 
+	// Begin UCharacterMovementComponent interface
+	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
+	// End UCharacterMovementComponent interface
+
 	bool bIsSliding;
 	float SlidingMovementSpeed;
 
@@ -128,6 +148,10 @@ protected:
 	float ZipLineOffset;
 	float ZipLineSpeed;
 	float ZipLineDropTime;
+
+	bool bDidSpringBoard;
+
+	FVector FallingStartLocation;
 
 	bool bIsParkourActionUpActive;
 	bool bIsParkourActionDownActive;
@@ -139,6 +163,7 @@ protected:
 	virtual void UpdateJumping(float DeltaTime);
 	virtual void UpdateCoilJumping(float DeltaTime);
 	virtual void UpdateZipLine(float DeltaTime);
+	virtual void UpdateSpringBoard(float DeltaTime);
 
 	/**
 	 * Set the height of the owning character capsule.

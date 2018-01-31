@@ -42,6 +42,19 @@ bool UParkourMovementComponent::IsCoilJumping()
 	return bIsCoilJumping;
 }
 
+void UParkourMovementComponent::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode)
+{
+	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
+
+	if (PreviousMovementMode == MOVE_Walking && MovementMode == MOVE_Falling)
+	{
+		ACharacter* Character = GetCharacterOwner();
+		UCapsuleComponent* CharacterCapsule = Character->GetCapsuleComponent();
+		float CapsuleHalfHeight = CharacterCapsule->GetScaledCapsuleHalfHeight();
+		FallingStartLocation = GetActorLocation() - FVector(0, 0, CapsuleHalfHeight);
+	}
+}
+
 void UParkourMovementComponent::UpdateParkourMovement(float DeltaTime)
 {
 	UpdateCrouching(DeltaTime);
@@ -49,6 +62,7 @@ void UParkourMovementComponent::UpdateParkourMovement(float DeltaTime)
 	UpdateJumping(DeltaTime);
 	UpdateCoilJumping(DeltaTime);
 	UpdateZipLine(DeltaTime);
+	UpdateSpringBoard(DeltaTime);
 }
 
 void UParkourMovementComponent::UpdateCrouching(float DeltaTime)
@@ -180,6 +194,40 @@ void UParkourMovementComponent::UpdateZipLine(float DeltaTime)
 				}
 			}
 		}
+	}
+}
+
+void UParkourMovementComponent::UpdateSpringBoard(float DeltaTime)
+{
+	if (MovementMode == MOVE_Falling)
+	{
+		if (!bIsParkourActionUpActive || bDidSpringBoard) return;
+
+		UWorld* World = GetWorld();
+		ACharacter* Character = GetCharacterOwner();
+
+		FVector Start = Character->GetActorLocation();
+		FVector End = Start - FVector(0, 0, SpringBoardHeightDeltaMax);
+		FCollisionShape CollisionShape = GetPawnCapsuleCollisionShape(UCharacterMovementComponent::SHRINK_None);
+
+		FHitResult Hit;
+		if (World->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, CollisionShape))
+		{
+			float HeightDelta = Hit.ImpactPoint.Z - FallingStartLocation.Z;
+
+			if (HeightDelta > SpringBoardHeightDeltaMin && HeightDelta < SpringBoardHeightDeltaMax)
+			{
+				FVector Direction = Character->GetActorForwardVector();
+				FVector LeftVector = -Character->GetActorRightVector();
+				Direction = Direction.RotateAngleAxis(SpringBoardBoostAngle, LeftVector);
+				Velocity = Direction * SpringBoardBoostStrength;;
+				bDidSpringBoard = true;
+			}
+		}
+	}
+	else
+	{
+		bDidSpringBoard = false;
 	}
 }
 
