@@ -272,6 +272,20 @@ void UParkourMovementComponent::UpdateRootMotion()
 	}
 }
 
+void UParkourMovementComponent::SetCameraLmits(FParkourCameraLimits Limits)
+{
+	AParkourCharacter* Character = Cast<AParkourCharacter>(GetCharacterOwner());
+	AParkourCameraManager* CameraManager = Character->GetParkourCameraManager();
+	CameraManager->SetCameraLmits(Limits);
+}
+
+void UParkourMovementComponent::ResetCameraLimits()
+{
+	AParkourCharacter* Character = Cast<AParkourCharacter>(GetCharacterOwner());
+	AParkourCameraManager* CameraManager = Character->GetParkourCameraManager();
+	CameraManager->ResetCameraLimits();
+}
+
 void UParkourMovementComponent::SetCapsuleHalfHeight(float HalfHeight)
 {
 	ACharacter* Character = GetCharacterOwner();

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "ParkourMovementComponent.h"
+#include "ParkourCameraManager.h"
 #include "ParkourCharacter.generated.h"
 
 UCLASS()
@@ -17,4 +18,6 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UParkourMovementComponent* GetParkourMovementComponent();
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	AParkourCameraManager* GetParkourCameraManager();
 };

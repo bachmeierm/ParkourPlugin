@@ -10,3 +10,9 @@ UParkourMovementComponent* AParkourCharacter::GetParkourMovementComponent()
 {
 	return Cast<UParkourMovementComponent>(GetMovementComponent());
 }
+
+AParkourCameraManager* AParkourCharacter::GetParkourCameraManager()
+{
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	return Cast<AParkourCameraManager>(PlayerController->PlayerCameraManager);
+}

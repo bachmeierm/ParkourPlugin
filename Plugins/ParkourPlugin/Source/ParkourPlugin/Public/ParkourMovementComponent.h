@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "ParkourZipLine.h"
+#include "ParkourCameraManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "ParkourMovementComponent.generated.h"
@@ -185,6 +186,16 @@ protected:
 	 * finish delegate and should be called for every component tick.
 	 */
 	void UpdateRootMotion();
+
+	/**
+	 * Constrain the camera rotation by the given limits.
+	 */
+	void SetCameraLmits(FParkourCameraLimits Limits);
+	
+	/**
+	 * Reset camera limits to the default value.
+	 */
+	void ResetCameraLimits();
 
 	/**
 	 * Set the height of the owning character capsule.
