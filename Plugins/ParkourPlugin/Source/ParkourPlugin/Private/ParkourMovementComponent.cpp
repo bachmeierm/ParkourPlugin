@@ -57,6 +57,10 @@ void UParkourMovementComponent::OnMovementModeChanged(EMovementMode PreviousMove
 
 void UParkourMovementComponent::UpdateParkourMovement(float DeltaTime)
 {
+	UpdateRootMotion();
+
+	if (bIsRootMotionActive) return;
+
 	UpdateCrouching(DeltaTime);
 	UpdateSliding(DeltaTime);
 	UpdateJumping(DeltaTime);
@@ -228,6 +232,43 @@ void UParkourMovementComponent::UpdateSpringBoard(float DeltaTime)
 	else
 	{
 		bDidSpringBoard = false;
+	}
+}
+
+void UParkourMovementComponent::PlayRootMotion(UAnimMontage* AnimMontage, FParkourRootMotionFinishDelegate& InFinishDelegate)
+{
+	if (bIsRootMotionActive) return;
+
+	bIsRootMotionActive = true;
+	RootMotionStartTime = GetWorld()->TimeSeconds;
+	RootMotionAnimMontage = AnimMontage;
+	RootMotionFinishDelegate = InFinishDelegate;
+
+	SetMovementMode(MOVE_Flying);
+
+	ACharacter* Character = GetCharacterOwner();
+	Character->PlayAnimMontage(AnimMontage);
+}
+
+void UParkourMovementComponent::UpdateRootMotion()
+{
+	if (bIsRootMotionActive)
+	{
+		float TimeDelta = GetWorld()->TimeSeconds - RootMotionStartTime;
+		float AnimationLength = RootMotionAnimMontage->GetPlayLength();
+
+		if (TimeDelta > AnimationLength)
+		{
+			if (RootMotionFinishDelegate.IsBound())
+			{
+				RootMotionFinishDelegate.Execute();
+			}
+
+			bIsRootMotionActive = false;
+			RootMotionStartTime = 0;
+			RootMotionAnimMontage = nullptr;
+			RootMotionFinishDelegate.Unbind();
+		}
 	}
 }
 

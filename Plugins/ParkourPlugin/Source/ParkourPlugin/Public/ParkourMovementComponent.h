@@ -6,6 +6,8 @@
 #include "Components/CapsuleComponent.h"
 #include "ParkourMovementComponent.generated.h"
 
+DECLARE_DELEGATE(FParkourRootMotionFinishDelegate);
+
 UENUM(BlueprintType)
 enum class EParkourMovementMode : uint8
 {
@@ -156,6 +158,11 @@ protected:
 	bool bIsParkourActionUpActive;
 	bool bIsParkourActionDownActive;
 
+	bool bIsRootMotionActive;
+	float RootMotionStartTime;
+	UAnimMontage* RootMotionAnimMontage = nullptr;
+	FParkourRootMotionFinishDelegate RootMotionFinishDelegate;
+
 	virtual void UpdateParkourMovement(float DeltaTime);
 
 	virtual void UpdateCrouching(float DeltaTime);
@@ -164,6 +171,20 @@ protected:
 	virtual void UpdateCoilJumping(float DeltaTime);
 	virtual void UpdateZipLine(float DeltaTime);
 	virtual void UpdateSpringBoard(float DeltaTime);
+
+	/**
+	 * Play an AnimMontage with root motion on the character mesh.
+	 *
+	 * @param AnimMontage The AnimMontage to play.
+	 * @param InFinishDelegate Called when playing the AnimMontage finishes.
+	 */
+	void PlayRootMotion(UAnimMontage* AnimMontage, FParkourRootMotionFinishDelegate& InOnFinishDelegate);
+
+	/**
+	 * Update the currently played root motion AnimMontage. Is responsible for calling the
+	 * finish delegate and should be called for every component tick.
+	 */
+	void UpdateRootMotion();
 
 	/**
 	 * Set the height of the owning character capsule.
